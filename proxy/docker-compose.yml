@@ -1,0 +1,80 @@
+version: "3"
+
+networks:
+  proxy-net:
+    driver: bridge
+
+volumes:
+  proxy:
+  nginx:
+
+services:
+  proxylists:
+    image: d1ablorus/proxylists
+    container_name: proxylists
+    volumes:
+      - proxy:/opt
+    restart: unless-stopped
+    networks:
+      - proxy-net
+    environment: &environment
+      - JOBS=30
+      - TREADS=200
+      - SITE=https://m.vk.com
+    logging:
+      options:
+        max-file: '3'
+        max-size: 10m
+  pyproxyhunter:
+    image: d1ablorus/pyproxyhunter
+    container_name: pyproxyhunter
+    volumes:
+      - proxy:/opt
+    restart: unless-stopped
+    networks:
+      - proxy-net
+    environment: *environment
+    logging:
+      options:
+        max-file: '3'
+        max-size: 10m
+  proxybroker:
+    image: d1ablorus/proxybroker
+    container_name: proxybroker
+    volumes:
+      - proxy:/opt
+    restart: unless-stopped
+    networks:
+      - proxy-net
+    environment: *environment
+    logging:
+      options:
+        max-file: '3'
+        max-size: 10m
+  proxypublic:
+    image: d1ablorus/proxypublic
+    container_name: proxypublic
+    volumes:
+      - proxy:/opt
+      - nginx:/opt/nginx
+    restart: unless-stopped
+    networks:
+      - proxy-net
+    logging:
+      options:
+        max-file: '3'
+        max-size: 10m
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - nginx:/usr/share/nginx/html
+    restart: unless-stopped
+    networks:
+      - proxy-net
+    logging:
+      options:
+        max-file: '3'
+        max-size: 10m
