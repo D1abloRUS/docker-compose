@@ -18,9 +18,9 @@ services:
     networks:
       - proxy-net
     environment: &environment
-      - JOBS=30
-      - TREADS=200
-      - SITE=https://m.vk.com
+      - JOBS=200
+      - TREADS=500
+      - SITE=https://vk.com
     logging:
       options:
         max-file: '3'
@@ -60,6 +60,7 @@ services:
     restart: unless-stopped
     networks:
       - proxy-net
+    environment: *environment
     logging:
       options:
         max-file: '3'
