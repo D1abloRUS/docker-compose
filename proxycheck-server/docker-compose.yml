@@ -19,8 +19,6 @@ services:
       - LETSENCRYPT_EMAIL=admin@d1ablo.ru
       - POSTGRES_HOST=proxycheck-db
     depends_on:
-      - nginx-proxy
-      - letsencrypt-nginx
       - proxycheck-db
     restart: unless-stopped
     networks:
