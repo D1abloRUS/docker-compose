@@ -1,8 +1,9 @@
 version: "3"
 
 networks:
-  frontend:
-    external: true
+  default:
+    external:
+      name: frontend
 
 volumes:
   certs:
@@ -24,8 +25,6 @@ services:
     labels:
       - "com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy=true"
     restart: unless-stopped
-    networks:
-      - frontend
     logging:
       options:
         max-file: '3'
