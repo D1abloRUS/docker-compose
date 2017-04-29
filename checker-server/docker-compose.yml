@@ -1,0 +1,87 @@
+version: "3"
+
+networks:
+  frontend:
+  backend:
+
+volumes:
+  certs:
+  nginx-data:
+  nginx-vhost:
+  db-data:
+
+services:
+  nginx-proxy:
+    image: jwilder/nginx-proxy:alpine
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - certs:/etc/nginx/certs:ro
+      - nginx-vhost:/etc/nginx/vhost.d
+      - nginx-data:/usr/share/nginx/html
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    labels:
+      - "com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy=true"
+    restart: unless-stopped
+    networks:
+      - frontend
+    logging:
+      options:
+        max-file: '3'
+        max-size: 10m
+
+  letsencrypt-nginx:
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    container_name: letsencrypt-nginx
+    volumes:
+      - certs:/etc/nginx/certs
+      - nginx-vhost:/etc/nginx/vhost.d
+      - nginx-data:/usr/share/nginx/html
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - nginx-proxy
+    restart: unless-stopped
+    logging:
+      options:
+        max-file: '3'
+        max-size: 10m
+
+  checker-server:
+    image: d1ablorus/checker-server
+    container_name: checker-server
+    environment:
+      - VIRTUAL_HOST=checker.d1ablo.ru
+      - VIRTUAL_PORT=3000
+      - LETSENCRYPT_HOST=checker.d1ablo.ru
+      - LETSENCRYPT_EMAIL=admin@d1ablo.ru
+      - POSTGRES_HOST=checker-db
+    depends_on:
+      - nginx-proxy
+      - letsencrypt-nginx
+      - checker-db
+    restart: unless-stopped
+    networks:
+      - frontend
+      - backend
+    logging:
+      options:
+        max-file: '3'
+        max-size: 10m
+
+  checker-db:
+    image: postgres:alpine
+    container_name: checker-db
+    environment:
+      - POSTGRES_PASSWORD=passw0rd
+    volumes:
+      - $PWD/sql:/docker-entrypoint-initdb.d
+      - db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - backend
+    logging:
+      options:
+        max-file: '3'
+        max-size: 10m

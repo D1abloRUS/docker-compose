@@ -1,26 +1,41 @@
 version: "3"
 
 networks:
-  proxy-net:
-    driver: bridge
+  proxy:
 
 volumes:
   proxy:
-  nginx:
 
 services:
+  proxycheck-client:
+    image: d1ablorus/proxycheck-client
+    container_name: proxycheck-client
+    volumes:
+      - proxy:/opt
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment: &environment
+      - JOBS=150
+      - TREADS=150
+      - SITE=https://vk.com
+      - PROXYLIST=/opt/proxylist.txt
+      - APIURL=https://proxy.d1ablo.ru
+    logging:
+      options:
+        max-file: '3'
+        max-size: 10m
   proxylists:
     image: d1ablorus/proxylists
     container_name: proxylists
     volumes:
       - proxy:/opt
+    depends_on:
+      - proxycheck-client
     restart: unless-stopped
     networks:
-      - proxy-net
-    environment: &environment
-      - JOBS=200
-      - TREADS=500
-      - SITE=https://vk.com
+      - proxy
+    environment: *environment
     logging:
       options:
         max-file: '3'
@@ -30,9 +45,11 @@ services:
     container_name: pyproxyhunter
     volumes:
       - proxy:/opt
+    depends_on:
+      - proxycheck-client
     restart: unless-stopped
     networks:
-      - proxy-net
+      - proxy
     environment: *environment
     logging:
       options:
@@ -43,38 +60,12 @@ services:
     container_name: proxybroker
     volumes:
       - proxy:/opt
+    depends_on:
+      - proxycheck-client
     restart: unless-stopped
     networks:
-      - proxy-net
+      - proxy
     environment: *environment
-    logging:
-      options:
-        max-file: '3'
-        max-size: 10m
-  proxypublic:
-    image: d1ablorus/proxypublic
-    container_name: proxypublic
-    volumes:
-      - proxy:/opt
-      - nginx:/opt/nginx
-    restart: unless-stopped
-    networks:
-      - proxy-net
-    environment: *environment
-    logging:
-      options:
-        max-file: '3'
-        max-size: 10m
-  nginx:
-    image: nginx:alpine
-    container_name: nginx
-    ports:
-      - "80:80"
-    volumes:
-      - nginx:/usr/share/nginx/html
-    restart: unless-stopped
-    networks:
-      - proxy-net
     logging:
       options:
         max-file: '3'
